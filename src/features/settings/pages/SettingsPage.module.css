@@ -1,0 +1,20 @@
+.settings__wrap{display:grid;gap:var(--s-8);grid-template-columns:1fr}
+@media(min-width:1024px){.settings__wrap{grid-template-columns:220px 1fr}}
+.settings__nav{display:flex;flex-direction:column;gap:2px;position:sticky;top:calc(var(--topbar-h) + var(--s-5));align-self:flex-start}
+.settings__nav-item{padding:10px 14px;border-radius:var(--r-md);font-size:var(--fs-sm);font-weight:var(--fw-medium);color:var(--text-muted);transition:color var(--dur-base) var(--ease),background-color var(--dur-base) var(--ease);text-align:start;min-height:40px}
+.settings__nav-item:hover{background:var(--surface-2);color:var(--text)}
+.settings__nav-item.is-active{background:var(--accent-soft);color:var(--accent);font-weight:var(--fw-semibold)}
+.settings__panel{display:flex;flex-direction:column;gap:var(--s-6)}
+.settings__section{padding:var(--s-5);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);display:flex;flex-direction:column;gap:0}
+.settings__section-head{margin-bottom:var(--s-4);padding-bottom:var(--s-4);border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:4px}
+.settings__section-title{font-size:var(--fs-lg);font-weight:var(--fw-semibold)}
+.settings__section-sub{font-size:var(--fs-sm);color:var(--text-muted)}
+.settings__row{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s-5);padding:var(--s-5) 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.settings__row:last-child{border-bottom:0;padding-bottom:0}
+.settings__row:first-child{padding-top:0}
+.settings__row-text{display:flex;flex-direction:column;gap:2px;flex:1;min-width:220px}
+.settings__row-label{font-size:var(--fs-sm);font-weight:var(--fw-semibold);color:var(--text)}
+.settings__row-desc{font-size:var(--fs-xs);color:var(--text-muted)}
+.settings__row-control{flex:0 0 auto;min-width:180px}
+.settings__save-bar{position:sticky;bottom:var(--s-4);margin-top:var(--s-5);padding:var(--s-3) var(--s-4);background:var(--surface-3);border:1px solid var(--border-strong);border-radius:var(--r-lg);display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);box-shadow:var(--shadow-md);animation:slideUp var(--dur-base) var(--ease-out)}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}

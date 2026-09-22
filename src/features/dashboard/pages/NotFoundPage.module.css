@@ -1,0 +1,6 @@
+.nf{min-height:60vh;display:grid;place-items:center;padding:var(--s-8) var(--s-4);text-align:center}
+.nf__panel{display:flex;flex-direction:column;align-items:center;gap:var(--s-4);max-width:520px;width:100%}
+.nf__code{font-size:var(--fs-4xl);font-weight:var(--fw-bold);color:var(--text-dim);letter-spacing:-.05em;font-family:var(--font-mono)}
+.nf__title{font-size:var(--fs-2xl);font-weight:var(--fw-bold)}
+.nf__desc{color:var(--text-muted);font-size:var(--fs-base);max-width:40ch;line-height:var(--lh-base)}
+.nf__actions{display:flex;gap:var(--s-3);flex-wrap:wrap;justify-content:center;margin-top:var(--s-2)}

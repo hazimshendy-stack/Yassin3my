@@ -1,0 +1,687 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Tajawal:wght@300;400;500;700;800&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500&family=Alex+Brush&family=Allura&family=Great+Vibes&family=Reem+Kufi+Ink&family=Aref+Ruqaa:wght@700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-arabic, "Cairo"), var(--font-english, "Inter"), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Authentic Signature Font Classes (Songstar / Luxury Cursive Script) */
+.font-signature-en {
+  font-family: 'Alex Brush', 'Allura', 'Great Vibes', cursive, sans-serif !important;
+}
+.font-signature-ar {
+  font-family: 'Aref Ruqaa', 'Reem Kufi Ink', 'Amiri', cursive, serif !important;
+}
+
+:root {
+  /* DARK ELECTRIC MODE (Default) */
+  --app-bg: #050508;
+  --app-text: #e2e8f0;
+  --glass-bg: rgba(10, 10, 15, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --glass-shadow: rgba(0, 0, 0, 0.7);
+  --glass-text-dim: #94a3b8;
+  --glass-text-heading: #ffffff;
+  --electric-accent: rgba(6, 182, 212, 0.15);
+  --glow-color: rgba(6, 182, 212, 0.4);
+  --glow-shadow: 0 0 25px var(--glow-color);
+  --card-subbed-bg: rgba(16, 185, 129, 0.05);
+  --card-subbed-border: rgba(16, 185, 129, 0.15);
+  --badge-glow: rgba(245, 158, 11, 0.2);
+  --nav-active-bg: rgba(6, 182, 212, 0.2);
+  --nav-active-border: rgba(6, 182, 212, 0.4);
+}
+
+.theme-light {
+  /* LIGHT ENERGY ELECTRIC MODE (Vibrant, Colorful, Radiant sky-blue & pink) */
+  --app-bg: #f3f8ff;
+  --app-text: #0f172a;
+  --glass-bg: rgba(255, 255, 255, 0.94);
+  --glass-border: rgba(14, 165, 233, 0.22);
+  --glass-shadow: rgba(236, 72, 153, 0.06);
+  --glass-text-dim: #0284c7; /* Sky blue style */
+  --glass-text-heading: #1e1b4b; /* deep violet heading */
+  --electric-accent: rgba(236, 72, 153, 0.12); /* pink pastel accent */
+  --glow-color: rgba(236, 72, 153, 0.6); /* pink glow */
+  --glow-shadow: 0 6px 20px rgba(236, 72, 153, 0.15);
+  --card-subbed-bg: rgba(244, 63, 94, 0.05);
+  --card-subbed-border: rgba(244, 63, 94, 0.25);
+  --badge-glow: rgba(14, 165, 233, 0.3);
+  --nav-active-bg: linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(236, 72, 153, 0.15));
+  --nav-active-border: rgba(14, 165, 233, 0.45);
+
+  /* A beautiful background pattern for vibrant colors: sky-blue, lavender and soft pink glow! */
+  background-image: radial-gradient(at 0% 0%, rgba(254, 215, 226, 0.5) 0px, transparent 55%),
+                    radial-gradient(at 50% 0%, rgba(224, 242, 254, 0.6) 0px, transparent 55%),
+                    radial-gradient(at 100% 100%, rgba(253, 224, 71, 0.2) 0px, transparent 55%);
+  background-attachment: fixed;
+}
+
+.theme-light.theme-pinkish {
+  --app-bg: #fff0f5; /* Lavender blush / soft pinkish-white */
+  --glass-bg: rgba(255, 240, 245, 0.94);
+  --glass-border: rgba(236, 72, 153, 0.25);
+  --glass-text-dim: #db2777;
+  --glass-text-heading: #831843;
+  --electric-accent: rgba(236, 72, 153, 0.18);
+  --glow-color: rgba(236, 72, 153, 0.7);
+  background-image: radial-gradient(at 0% 0%, rgba(253, 164, 186, 0.6) 0px, transparent 55%),
+                    radial-gradient(at 50% 0%, rgba(252, 231, 243, 0.7) 0px, transparent 55%),
+                    radial-gradient(at 100% 100%, rgba(244, 114, 182, 0.25) 0px, transparent 55%) !important;
+}
+
+.theme-light.theme-brownish {
+  --app-bg: #fdfaf7; /* Warm soft linen white */
+  --glass-bg: rgba(253, 250, 247, 0.94);
+  --glass-border: rgba(180, 83, 9, 0.22);
+  --glass-text-dim: #b45309; /* Warm brown-orange */
+  --glass-text-heading: #451a03; /* Deep warm chocolate dark */
+  --electric-accent: rgba(180, 83, 9, 0.12);
+  --glow-color: rgba(180, 83, 9, 0.5);
+  background-image: radial-gradient(at 0% 0%, rgba(254, 243, 199, 0.7) 0px, transparent 55%),
+                    radial-gradient(at 50% 0%, rgba(245, 230, 212, 0.6) 0px, transparent 55%),
+                    radial-gradient(at 100% 100%, rgba(180, 83, 9, 0.12) 0px, transparent 55%) !important;
+}
+
+.theme-light.theme-babyblue {
+  --app-bg: #f4f9ff; /* Soft baby blue tint */
+  --glass-bg: rgba(244, 249, 255, 0.94);
+  --glass-border: rgba(14, 165, 233, 0.25);
+  --glass-text-dim: #0284c7; /* Sky blue text */
+  --glass-text-heading: #0369a1; /* Rich ocean blue */
+  --electric-accent: rgba(14, 165, 233, 0.15);
+  --glow-color: rgba(14, 165, 233, 0.6);
+  background-image: radial-gradient(at 0% 0%, rgba(186, 230, 253, 0.6) 0px, transparent 55%),
+                    radial-gradient(at 50% 0%, rgba(224, 242, 254, 0.7) 0px, transparent 55%),
+                    radial-gradient(at 100% 100%, rgba(14, 165, 233, 0.12) 0px, transparent 55%) !important;
+}
+
+/* HIGH-FIDELITY CONTRAST REPAIRS FOR LIGHT MODE */
+.theme-light .text-slate-100:not(button, button *, .bg-cyan-600 *, .bg-emerald-600 *, .bg-indigo-600 *, .bg-red-500 *, .bg-pink-600 *),
+.theme-light .text-slate-200:not(button, button *, .bg-cyan-600 *, .bg-emerald-600 *, .bg-indigo-600 *, .bg-red-500 *, .bg-pink-600 *),
+.theme-light .text-slate-300:not(button, button *, .bg-cyan-600 *, .bg-emerald-600 *, .bg-indigo-600 *, .bg-red-500 *, .bg-pink-600 *),
+.theme-light .text-slate-50:not(button, button *, .bg-cyan-600 *, .bg-emerald-600 *, .bg-indigo-600 *, .bg-red-500 *, .bg-pink-600 *),
+.theme-light .text-zinc-100:not(button, button *, .bg-cyan-600 *, .bg-emerald-600 *, .bg-indigo-600 *, .bg-red-500 *, .bg-pink-600 *),
+.theme-light .text-zinc-200:not(button, button *, .bg-cyan-600 *, .bg-emerald-600 *, .bg-indigo-600 *, .bg-red-500 *, .bg-pink-600 *),
+.theme-light .text-white:not(button, button *, .bg-cyan-600 *, .bg-emerald-600 *, .bg-indigo-600 *, .bg-indigo-700 *, .bg-red-500 *, .bg-pink-600 *, .bg-teal-600 *),
+.theme-light .text-slate-50\/90:not(button, button *),
+.theme-light .text-slate-200\/90:not(button, button *),
+.theme-light .text-white\/90:not(button, button *) {
+  color: #0f172a !important;
+}
+
+.theme-light .text-slate-400:not(button, button *, .bg-cyan-600 *, .bg-emerald-600 *),
+.theme-light .text-slate-350:not(button, button *, .bg-cyan-600 *, .bg-emerald-600 *),
+.theme-light .text-slate-500:not(button, button *, .bg-cyan-600 *, .bg-emerald-600 *),
+.theme-light .text-slate-550:not(button, button *, .bg-cyan-600 *, .bg-emerald-600 *),
+.theme-light .text-slate-600:not(button, button *, .bg-cyan-600 *, .bg-emerald-600 *),
+.theme-light .text-slate-650:not(button, button *, .bg-cyan-600 *, .bg-emerald-600 *),
+.theme-light .text-zinc-400:not(button, button *, .bg-cyan-600 *, .bg-emerald-600 *),
+.theme-light .text-zinc-500:not(button, button *, .bg-cyan-600 *, .bg-emerald-600 *),
+.theme-light .text-gray-400:not(button, button *, .bg-cyan-600 *, .bg-emerald-600 *),
+.theme-light .text-indigo-200:not(button, button *),
+.theme-light .text-purple-200:not(button, button *),
+.theme-light .text-cyan-200:not(button, button *),
+.theme-light .text-white\/60:not(button, button *),
+.theme-light .text-white\/70:not(button, button *),
+.theme-light .text-white\/80:not(button, button *) {
+  color: #1e293b !important;
+}
+
+.theme-light input::placeholder,
+.theme-light textarea::placeholder {
+  color: #475569 !important;
+  opacity: 1 !important;
+}
+
+.theme-light .text-slate-450,
+.theme-light .text-slate-400,
+.theme-light .text-slate-500,
+.theme-light .text-slate-550 {
+  color: #334155 !important; /* Dark slate gray for sub-labels */
+}
+
+.theme-light .text-pink-300,
+.theme-light .text-pink-400 {
+  color: #db2777 !important; /* Rich pink/rose instead of bleached neon */
+}
+
+.theme-light .text-purple-300,
+.theme-light .text-purple-400 {
+  color: #7c3aed !important; /* Strong purple to be clearly legible on white/gray bg */
+}
+
+.theme-light .text-red-300,
+.theme-light .text-red-400,
+.theme-light .text-red-450 {
+  color: #b91c1c !important; /* Crimson red */
+}
+
+.theme-light .text-cyan-300,
+.theme-light .text-cyan-400,
+.theme-light .text-cyan-455 {
+  color: #0369a1 !important; /* Indigo/cyan water blue */
+}
+
+.theme-light .text-amber-300,
+.theme-light .text-amber-400,
+.theme-light .text-amber-450 {
+  color: #b45309 !important; /* Deep warm amber/orange tint */
+}
+
+/* Ensure button white labels remain distinct white in light mode */
+.keep-text-white,
+.theme-light .keep-text-white {
+  color: #ffffff !important;
+}
+
+.theme-light button,
+.theme-light .btn,
+.theme-light .bg-cyan-600,
+.theme-light .bg-emerald-600,
+.theme-light .bg-indigo-600,
+.theme-light .bg-indigo-700,
+.theme-light .bg-red-500,
+.theme-light .bg-pink-600,
+.theme-light .text-amber-100 {
+  text-shadow: none;
+}
+
+.theme-light .bg-black\/30,
+.theme-light .bg-slate-900\/50,
+.theme-light .bg-\[\#06060c\],
+.theme-light .bg-\[\#0d0d14\],
+.theme-light .bg-slate-900\/80,
+.theme-light .bg-\[\#020205\],
+.theme-light .bg-slate-950\/40,
+.theme-light .bg-\[\#040408\],
+.theme-light .bg-black\/40,
+.theme-light .bg-\[\#0a0a0f\],
+.theme-light .bg-\[\#050508\],
+.theme-light .bg-\[\#0a0a10\],
+.theme-light .bg-\[\#0c0c14\],
+.theme-light .bg-\[\#09090f\],
+.theme-light .bg-\[\#050508\]\/95,
+.theme-light .bg-\[\#0b0b12\],
+.theme-light .bg-\[\#08080f\],
+.theme-light .bg-\[\#10101a\],
+.theme-light .bg-\[\#0b0b14\],
+.theme-light .bg-\[\#151525\],
+.theme-light .bg-slate-950,
+.theme-light .bg-zinc-950,
+.theme-light .bg-slate-900,
+.theme-light .bg-zinc-900,
+.theme-light .bg-zinc-950\/40,
+.theme-light .bg-zinc-900\/30,
+.theme-light .bg-slate-900\/30 {
+  background-color: rgba(255, 255, 255, 0.94) !important; /* Beautiful light radiant white card instead of sad grey! */
+  border: 1px solid rgba(14, 165, 233, 0.22) !important;
+  box-shadow: 0 4px 18px rgba(14, 165, 233, 0.05) !important;
+}
+
+.theme-light .bg-\[\#000000\],
+.theme-light .bg-black,
+.theme-light .bg-black\/65,
+.theme-light .bg-black\/80,
+.theme-light .bg-black\/85,
+.theme-light .bg-black\/90,
+.theme-light .bg-black\/95 {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  color: #0f172a !important;
+}
+
+.theme-light .border-white\/5,
+.theme-light .border-white\/10,
+.theme-light .border-white\/20,
+.theme-light .border-slate-800,
+.theme-light .border-slate-900,
+.theme-light .border-zinc-800 {
+  border-color: rgba(15, 23, 42, 0.14) !important;
+}
+
+.theme-light header {
+  background: linear-gradient(135deg, #e0f2fe 0%, #ffffff 50%, #fce7f3 100%) !important;
+  border-bottom: 1px solid rgba(14, 165, 233, 0.15) !important;
+  box-shadow: 0 4px 20px rgba(14, 165, 233, 0.08) !important;
+}
+
+.theme-light footer {
+  background-color: #f1f5f9 !important;
+  border-top: 1px solid rgba(15, 23, 42, 0.1) !important;
+}
+
+.theme-light .glass-panel {
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(14px) !important;
+  border-color: rgba(14, 165, 233, 0.22) !important;
+  box-shadow: 0 12px 35px rgba(236, 72, 153, 0.06) !important;
+}
+
+/* GLOBAL FORM CONTROLS & DROPDOWN (SELECT & OPTION) DARK/LIGHT MODES */
+select,
+input,
+textarea {
+  color-scheme: dark;
+}
+
+select {
+  background-color: #0d0d14;
+  color: #f1f5f9;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+select option {
+  background-color: #0d0d14 !important;
+  color: #f1f5f9 !important;
+  padding: 8px 12px;
+}
+
+select optgroup {
+  background-color: #07070b !important;
+  color: #38bdf8 !important;
+  font-weight: bold;
+}
+
+.theme-light select,
+.theme-light input,
+.theme-light textarea {
+  color-scheme: light !important;
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border-color: rgba(15, 23, 42, 0.18) !important;
+}
+
+.theme-light select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.theme-light select optgroup {
+  background-color: #f1f5f9 !important;
+  color: #0284c7 !important;
+}
+
+/* Correct contrast of active tabs inside Navigation Bars */
+.theme-light .bg-cyan-950\/40 {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+  border-color: #bae6fd !important;
+}
+
+/* 💬 HIGH-CONTRAST CHAT LIGHT MODE OVERRIDES 💬 */
+.theme-light .bg-\[\#09090f\] {
+  background-color: #f1f5f9 !important;
+}
+
+.theme-light .bg-slate-900\/60 {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+  border-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+.theme-light .bg-amber-950\/40 {
+  background-color: #fef3c7 !important;
+  color: #78350f !important;
+  border-color: #fde68a !important;
+}
+
+.theme-light .bg-rose-955\/40,
+.theme-light .bg-rose-950\/40 {
+  background-color: #fee2e2 !important;
+  color: #991b1b !important;
+  border-color: #fecaca !important;
+}
+
+.theme-light .bg-cyan-950\/45 {
+  background-color: #e0f7fa !important;
+  color: #006064 !important;
+  border-color: #b2ebf2 !important;
+}
+
+/* Fix chat usernames and tags color in light mode */
+.theme-light .text-slate-205,
+.theme-light .text-slate-200 {
+  color: #1e293b !important;
+}
+
+.theme-light .text-cyan-200 {
+  color: #0891b2 !important;
+}
+
+.theme-light .text-rose-200 {
+  color: #be123c !important;
+}
+
+.theme-light .text-amber-200 {
+  color: #b45309 !important;
+}
+
+/* ⚡ HIGH-VOLTAGE ELECTRO THEME ANIMATIONS */
+@keyframes left-lightning-flicker {
+  0%, 100% {
+    opacity: 0.1;
+    filter: drop-shadow(0 0 2px rgba(6, 182, 212, 0.3)) brightness(0.9);
+  }
+  14% {
+    opacity: 0.15;
+  }
+  15% {
+    opacity: 0.85;
+    filter: drop-shadow(0 0 15px rgba(6, 182, 212, 0.95)) brightness(1.7);
+  }
+  17% {
+    opacity: 0.2;
+  }
+  18% {
+    opacity: 0.95;
+    filter: drop-shadow(0 0 20px rgba(14, 165, 233, 1)) brightness(2);
+  }
+  20% {
+    opacity: 0.15;
+  }
+  45% {
+    opacity: 0.08;
+  }
+  46% {
+    opacity: 0.75;
+    filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.8)) brightness(1.5);
+  }
+  48% {
+    opacity: 0.1;
+  }
+  80% {
+    opacity: 0.12;
+  }
+}
+
+@keyframes right-lightning-flicker {
+  0%, 100% {
+    opacity: 0.08;
+    filter: drop-shadow(0 0 2px rgba(168, 85, 247, 0.3)) brightness(0.9);
+  }
+  32% {
+    opacity: 0.1;
+  }
+  33% {
+    opacity: 0.8;
+    filter: drop-shadow(0 0 18px rgba(168, 85, 247, 0.9)) brightness(1.8);
+  }
+  35% {
+    opacity: 0.2;
+  }
+  36% {
+    opacity: 0.9;
+    filter: drop-shadow(0 0 22px rgba(6, 182, 212, 0.95)) brightness(2);
+  }
+  38% {
+    opacity: 0.12;
+  }
+  72% {
+    opacity: 0.05;
+  }
+  73% {
+    opacity: 0.75;
+    filter: drop-shadow(0 0 14px rgba(6, 182, 212, 0.85)) brightness(1.6);
+  }
+  75% {
+    opacity: 0.15;
+  }
+}
+
+@keyframes electro-flow-vert {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+/* Electro Side panels styling */
+.electro-panel-left {
+  animation: left-lightning-flicker 5.5s infinite ease-in-out;
+}
+
+.electro-panel-right {
+  animation: right-lightning-flicker 7s infinite ease-in-out;
+}
+
+.electro-discharge-particle {
+  position: absolute;
+  width: 2px;
+  height: 80px;
+  background: linear-gradient(to bottom, transparent, #06b6d4, #a855f7, transparent);
+  opacity: 0.5;
+  animation: electro-flow-vert 3s infinite linear;
+}
+
+/* Sleek global active tabs styles */
+.navbar-item-active {
+  background: var(--nav-active-bg) !important;
+  border-color: var(--nav-active-border) !important;
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
+}
+
+/* Custom scrollbar to look sleek in dark mode */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent; 
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14); 
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.28); 
+}
+
+/* Specific transparent track scrollbar for Notification Center & Cards */
+.notification-scrollbar,
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+.theme-light .notification-scrollbar,
+.theme-light .custom-scrollbar {
+  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+}
+
+.notification-scrollbar::-webkit-scrollbar,
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.notification-scrollbar::-webkit-scrollbar-track,
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+.notification-scrollbar::-webkit-scrollbar-thumb,
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 9999px;
+}
+
+.theme-light .notification-scrollbar::-webkit-scrollbar-thumb,
+.theme-light .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.notification-scrollbar::-webkit-scrollbar-thumb:hover,
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.theme-light .notification-scrollbar::-webkit-scrollbar-thumb:hover,
+.theme-light .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.28);
+}
+
+/* Base body style matching Immersive UI */
+body {
+  background-color: var(--app-bg);
+  color: var(--app-text);
+  font-family: var(--font-sans);
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+/* Premium Immersive Theme Utilities */
+.immersive-grid-overlay {
+  background-image: radial-gradient(rgba(30, 41, 59, 0.35) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+}
+
+.theme-light .immersive-grid-overlay {
+  background-image: radial-gradient(rgba(148, 163, 184, 0.25) 1.5px, transparent 1.5px);
+}
+
+.glow-btn-cyan {
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.25);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glow-btn-cyan:hover {
+  box-shadow: 0 0 30px rgba(6, 182, 212, 0.45);
+  transform: translateY(-1px);
+}
+
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px var(--glass-shadow);
+  transition: background-color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+.glass-panel-hover:hover {
+  border-color: var(--glow-color);
+  background: var(--panel-card-bg);
+}
+
+/* Dynamic text helper utility classes */
+.text-theme-main {
+  color: var(--app-text) !important;
+}
+
+.text-theme-dim {
+  color: var(--glass-text-dim) !important;
+}
+
+.text-theme-heading {
+  color: var(--glass-text-heading) !important;
+}
+
+/* Video player protection styles to restrict sharing and downloads */
+video::-internal-media-controls-download-button {
+  display: none !important;
+}
+video::-webkit-media-controls-enclosure {
+  overflow: hidden !important;
+}
+video {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+/* Force category badges and white text to stay crisp white in light mode */
+.category-badge,
+.theme-light .category-badge,
+[class*="keep-text-white"],
+.theme-light [class*="keep-text-white"] {
+  color: #ffffff !important;
+}
+
+/* Ensure course category labels inside badges are perfectly white in light mode */
+.theme-light .bg-slate-950\/70 span,
+.theme-light [class*="bg-slate-950"] {
+  color: #ffffff !important;
+}
+
+/* Dark gray styling for back buttons in light mode (EGY-Skill UI adjustments) */
+.theme-light .back-btn {
+  background-color: #334155 !important; /* slate-700 dark gray */
+  color: #ffffff !important;
+  border-color: #1e293b !important; /* slate-800 border */
+}
+
+.theme-light .back-btn:hover {
+  background-color: #1e293b !important; /* slate-800 */
+}
+
+.theme-light .back-btn * {
+  color: #ffffff !important;
+}
+
+/* Hide upper navbar and footer when Skillawi is maximized */
+body.sklawi-maximized header,
+body.sklawi-maximized footer,
+body.sklawi-maximized #mobile-bottom-navbar {
+  display: none !important;
+}
+
+/* Hide scrollbars for scrollbar-none class */
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+}
+.scrollbar-none {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+
+/* Ensure fixed-positioned player wrapper escapes any container transforms in fullscreen mode */
+body.video-fullscreen-active div:not(.secure-watermark-floating),
+body.video-fullscreen-active main {
+  transform: none !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  perspective: none !important;
+}
+
+body.video-fullscreen-active {
+  overflow: hidden !important;
+}
+
+/* Ensure the native HTML5 fullscreen container fills the screen and stays black */
+div:fullscreen,
+div:-webkit-full-screen,
+div:-moz-full-screen,
+div:-ms-fullscreen {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  max-height: none !important;
+  background-color: black !important;
+  z-index: 2147483647 !important;
+}
+
+/* Transparent custom scrollbar requested by user */
+.transparent-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(168, 85, 247, 0.25) transparent;
+}
+.transparent-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.transparent-scrollbar::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+.transparent-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.25) !important;
+  border-radius: 9999px !important;
+}
+.transparent-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.5) !important;
+}
+

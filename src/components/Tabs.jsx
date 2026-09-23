@@ -1,27 +1,15 @@
-import './Tabs.module.css';
-
-export function Tabs({ tabs = [], value, onChange, className = '' }) {
+export function Tabs({ tabs = [], value, onChange }) {
   return (
-    <div role="tablist" className={['tabs', className].filter(Boolean).join(' ')}>
-      {tabs.map((t) => {
-        const active = t.value === value;
-        return (
-          <button
-            key={t.value}
-            role="tab"
-            type="button"
-            aria-selected={active}
-            className={`tabs__tab ${active ? 'is-active' : ''}`}
-            onClick={() => onChange?.(t.value)}
-          >
-            {t.icon ? <span className="tabs__icon">{t.icon}</span> : null}
-            <span>{t.label}</span>
-            {typeof t.count === 'number' ? <span className="tabs__count">{t.count}</span> : null}
-          </button>
-        );
-      })}
+    <div className="tabs" role="tablist">
+      {tabs.map((t) => (
+        <button key={t.value} role="tab" type="button" aria-selected={t.value === value}
+          className={'tabs__tab' + (t.value === value ? ' tabs__tab--on' : '')}
+          onClick={() => onChange && onChange(t.value)}>
+          {t.label}
+          {typeof t.count === 'number' ? <span className="tabs__count">{t.count}</span> : null}
+        </button>
+      ))}
     </div>
   );
 }
-
 export default Tabs;

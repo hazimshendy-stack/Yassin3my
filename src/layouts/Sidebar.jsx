@@ -1,92 +1,63 @@
-import { useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
-import {
-  LayoutDashboard,
-  BookOpen,
-  Boxes,
-  User as UserIcon,
-  Settings,
-  Circle,
-} from 'lucide-react';
-import { useUI } from '../components/UIProvider.jsx';
-import { useKeydown } from '../hooks/useKeydown.js';
-import { useFocusTrap } from '../hooks/useFocusTrap.js';
-import { useLockBodyScroll } from '../hooks/useLockBodyScroll.js';
-import { useMediaQuery } from '../hooks/useMediaQuery.js';
-import { NAV_SECTIONS } from '../lib/constants.js';
-import './Sidebar.module.css';
+import { LayoutDashboard, BookOpen, User as UserIcon, Settings as SettingsIcon, Compass, X } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { useUI } from '../contexts/UIContext.jsx';
+import { NAV } from '../lib/constants.js';
 
-const ICONS = {
-  LayoutDashboard,
-  BookOpen,
-  Boxes,
-  User: UserIcon,
-  Settings,
-};
-
-function resolveIcon(name) {
-  const Ico = ICONS[name] || Circle;
-  return <Ico size={18} />;
-}
+const ICONS = { LayoutDashboard, BookOpen, User: UserIcon, Settings: SettingsIcon };
 
 export function Sidebar() {
-  const { sidebarOpen, closeSidebar, lang } = useUI();
-  const isDesktop = useMediaQuery('(min-width: 1024px)');
-  const drawerRef = useRef(null);
+  const { sidebarOpen, closeSidebar } = useUI();
+  const ref = useRef(null);
 
-  useKeydown((e) => { if (e.key === 'Escape') closeSidebar(); }, !isDesktop && sidebarOpen);
-  useLockBodyScroll(!isDesktop && sidebarOpen);
-  useFocusTrap(drawerRef, !isDesktop && sidebarOpen);
-
-  useEffect(() => { if (isDesktop) closeSidebar(); }, [isDesktop, closeSidebar]);
-
-  const rendered = (
-    <aside
-      ref={drawerRef}
-      className={'sidebar ' + (sidebarOpen ? 'is-open' : '')}
-      aria-label="sidebar navigation"
-    >
-      <nav className="sidebar__nav">
-        {NAV_SECTIONS.map((section) => (
-          <div key={section.id} className="sidebar__section">
-            <p className="sidebar__section-title">
-              {lang === 'ar' ? section.titleAr : section.titleEn}
-            </p>
-            <ul className="sidebar__list">
-              {section.items.map((item) => (
-                <li key={item.to}>
-                  <NavLink
-                    to={item.to}
-                    end={item.to === '/'}
-                    className={({ isActive }) => 'sidebar__item ' + (isActive ? 'is-active' : '')}
-                    onClick={() => { if (!isDesktop) closeSidebar(); }}
-                  >
-                    <span className="sidebar__icon" aria-hidden="true">
-                      {resolveIcon(item.icon)}
-                    </span>
-                    <span className="sidebar__label">
-                      {lang === 'ar' ? item.labelAr : item.labelEn}
-                    </span>
-                  </NavLink>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </nav>
-    </aside>
-  );
-
-  if (isDesktop) return rendered;
+  useEffect(() => {
+    const h = (e) => e.key === 'Escape' && closeSidebar();
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [closeSidebar]);
 
   return (
     <>
-      {sidebarOpen ? (
-        <div className="sidebar__overlay" onClick={closeSidebar} aria-hidden="true" />
-      ) : null}
-      {rendered}
+      {sidebarOpen ? <div className="sidebar__overlay" onClick={closeSidebar} aria-hidden /> : null}
+      <aside ref={ref} className={'sidebar' + (sidebarOpen ? ' sidebar--open' : '')} aria-label="التنقل">
+        <button className="sidebar__close" onClick={closeSidebar} aria-label="إغلاق"><X size={18} /></button>
+
+        <div className="sidebar__brand">
+          <div className="brand__mark" aria-hidden />
+          <div>
+            <div className="sidebar__title">EGY-Skills</div>
+            <div className="sidebar__tag">منصة الطلاب</div>
+          </div>
+        </div>
+
+        <nav className="sidebar__nav">
+          {NAV.map((group) => (
+            <div key={group.group} className="sidebar__group">
+              <p className="sidebar__group-title">{group.group}</p>
+              <ul>
+                {group.items.map((item) => {
+                  const Ico = ICONS[item.icon] || Compass;
+                  return (
+                    <li key={item.to}>
+                      <NavLink to={item.to} end={item.to === '/'} className={({ isActive }) => 'side-link' + (isActive ? ' side-link--on' : '')} onClick={closeSidebar}>
+                        <span className="side-link__icon"><Ico size={18} /></span>
+                        <span className="side-link__label">{item.label}</span>
+                      </NavLink>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </nav>
+
+        <div className="sidebar__cta">
+          <div className="sidebar__cta-title">ابدأ رحلتك</div>
+          <p className="sidebar__cta-desc">اختر كورسًا وابدأ التعلم الآن.</p>
+          <NavLink to="/courses" className="btn btn--primary btn--sm btn--block" onClick={closeSidebar}>تصفح الكورسات</NavLink>
+        </div>
+      </aside>
     </>
   );
 }
-
 export default Sidebar;

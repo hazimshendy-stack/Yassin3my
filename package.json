@@ -1,9 +1,8 @@
 {
   "name": "egy-skills",
   "private": true,
-  "version": "2.0.0",
+  "version": "3.0.0",
   "type": "module",
-  "description": "EGY-Skills Academy — youth-oriented student platform (React + Vite, black & green).",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -25,7 +24,5 @@
     "globals": "^15.11.0",
     "vite": "^5.4.10"
   },
-  "engines": {
-    "node": ">=18"
-  }
+  "engines": { "node": ">=18" }
 }

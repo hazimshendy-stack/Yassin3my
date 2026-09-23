@@ -1,12 +1,9 @@
 #!/usr/bin/env node
 "use strict";
 /* =============================================================================
- * deploy-to-github.cjs — one-shot: patch → git init → push → GitHub Pages
- *
- * Usage:
- *   node deploy-to-github.cjs
- *   node deploy-to-github.cjs --user=Shendyy --repo=egy-skills
- *   node deploy-to-github.cjs --skip-push      (local prep only)
+ * fix.cjs — Keep ONLY GitHub Pages deployment
+ * Removes: Vercel, Netlify, Docker, Cloudflare, Surge, Firebase, gh-pages branch
+ * Adds:    .github/workflows/deploy.yml (official GitHub Pages action)
  * ============================================================================= */
 
 const fs = require("fs");
@@ -16,8 +13,8 @@ const readline = require("readline");
 const { spawnSync } = require("child_process");
 
 const ROOT = __dirname;
+const SELF = path.basename(__filename);
 
-// ---------- ANSI ----------
 const C = {
   r: "\x1b[0m",
   b: "\x1b[1m",
@@ -36,46 +33,7 @@ const info = (m) => console.log(paint(C.cyn, "ℹ") + " " + m);
 const step = (m) => console.log("\n" + paint(C.b + C.cyn, "▶ " + m));
 const hr = () => console.log(paint(C.gry, "─".repeat(60)));
 
-// ---------- CLI args ----------
-const argv = process.argv.slice(2);
-const argOf = (k) => {
-  const a = argv.find((x) => x.startsWith("--" + k + "="));
-  return a ? a.split("=")[1] : null;
-};
-const SKIP_PUSH = argv.includes("--skip-push");
-
-// ---------- Input ----------
-function ask(q) {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-  return new Promise((res) =>
-    rl.question(q, (a) => {
-      rl.close();
-      res(a.trim());
-    })
-  );
-}
-
-// ---------- Shell ----------
-function run(cmd, args, opts) {
-  args = args || [];
-  opts = opts || {};
-  const r = spawnSync(cmd, args, {
-    cwd: opts.cwd || ROOT,
-    stdio: opts.silent ? "pipe" : "inherit",
-    encoding: "utf8",
-    shell: os.platform() === "win32",
-    timeout: opts.timeout || 5 * 60 * 1000,
-  });
-  return {
-    code: typeof r.status === "number" ? r.status : 1,
-    out: (r.stdout || "") + (r.stderr || ""),
-  };
-}
-
-// ---------- FS ----------
+// ---------- FS helpers ----------
 const exists = (p) => {
   try {
     return fs.existsSync(p);
@@ -83,30 +41,56 @@ const exists = (p) => {
     return false;
   }
 };
-const read = (p) => {
+const readF = (p) => {
   try {
     return fs.readFileSync(p, "utf8");
   } catch {
     return null;
   }
 };
-const write = (p, s) => {
+const writeF = (p, s) => {
+  fs.mkdirSync(path.dirname(p), { recursive: true });
   fs.writeFileSync(p, s, "utf8");
 };
+const rm = (rel) => {
+  const full = path.join(ROOT, rel);
+  try {
+    if (exists(full)) {
+      fs.rmSync(full, { recursive: true, force: true });
+      return true;
+    }
+  } catch {
+    /* ignore */
+  }
+  return false;
+};
+const ask = (q) =>
+  new Promise((res) => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+    rl.question(q, (a) => {
+      rl.close();
+      res(a.trim());
+    });
+  });
 
 // ---------- Backup ----------
 function backup() {
   const d = new Date();
   const pad = (n) => String(n).padStart(2, "0");
-  const tag =
-    d.getFullYear() +
-    pad(d.getMonth() + 1) +
-    pad(d.getDate()) +
-    "-" +
-    pad(d.getHours()) +
-    pad(d.getMinutes()) +
-    pad(d.getSeconds());
-  const dir = path.join(ROOT, ".backup-" + tag);
+  const dir = path.join(
+    ROOT,
+    ".backup-" +
+      d.getFullYear() +
+      pad(d.getMonth() + 1) +
+      pad(d.getDate()) +
+      "-" +
+      pad(d.getHours()) +
+      pad(d.getMinutes()) +
+      pad(d.getSeconds())
+  );
   const skipD = new Set([
     "node_modules",
     ".git",
@@ -115,8 +99,11 @@ function backup() {
     ".next",
     "coverage",
     "out",
+    ".cache",
+    ".vite",
+    ".turbo",
   ]);
-  const skipF = new Set([path.basename(__filename), "errors.txt", ".DS_Store"]);
+  const skipF = new Set([SELF, "errors.txt", ".DS_Store", "Thumbs.db"]);
   try {
     fs.mkdirSync(dir, { recursive: true });
     let n = 0;
@@ -147,253 +134,555 @@ function backup() {
         }
       }
     })(ROOT, dir);
-    ok("Backup: " + path.basename(dir) + " (" + n + " files)");
+    ok("Backup: " + paint(C.cyn, path.basename(dir)) + " (" + n + " files)");
   } catch (e) {
     warn("backup skipped: " + e.message);
   }
 }
 
-// ---------- 1. Patch vite.config.js ----------
-function patchViteConfig(repoName) {
-  step("Patching vite.config.js");
+// =============================================================================
+// 1. DELETE ALL NON-GITHUB DEPLOY ARTIFACTS
+// =============================================================================
+const KILL_FILES = [
+  // Hosting configs
+  "vercel.json",
+  "netlify.toml",
+  "netlify.json",
+  "Dockerfile",
+  "Dockerfile.dev",
+  ".dockerignore",
+  "docker-compose.yml",
+  "docker-compose.yaml",
+  "firebase.json",
+  ".firebaserc",
+  "fly.toml",
+  "render.yaml",
+  "railway.json",
+  "app.yaml",
+  "static.json",
+  // Deploy scripts
+  "deploy-to-github.cjs",
+  "deploy.cjs",
+  "deploy.js",
+  "scripts/deploy-interactive.cjs",
+  "scripts/zip-project.cjs",
+  "scripts/deploy.js",
+  "scripts/deploy.cjs",
+  // CI/CD (old)
+  ".github/workflows/ci.yml",
+  ".github/workflows/deploy-pages.yml",
+  ".github/workflows/deploy-vercel.yml",
+  ".github/workflows/release.yml",
+  ".github/workflows/dependency-review.yml",
+  // Backup leftovers
+  "surge.log",
+  ".surgeignore",
+];
+
+const KILL_DIRS = [".vercel", ".netlify", "out"];
+
+function killArtifacts() {
+  step("Removing non-GitHub deployment artifacts");
+  let n = 0;
+
+  for (const f of KILL_FILES) {
+    if (f === SELF) continue;
+    if (rm(f)) {
+      info("removed " + f);
+      n++;
+    }
+  }
+  for (const d of KILL_DIRS) {
+    if (rm(d)) {
+      info("removed dir " + d + "/");
+      n++;
+    }
+  }
+
+  // Kill any *.cjs at root that starts with "deploy" (except self)
+  try {
+    for (const name of fs.readdirSync(ROOT)) {
+      if (name === SELF) continue;
+      if (
+        /^deploy/i.test(name) &&
+        (name.endsWith(".cjs") ||
+          name.endsWith(".js") ||
+          name.endsWith(".sh") ||
+          name.endsWith(".bat"))
+      ) {
+        if (rm(name)) {
+          info("removed " + name);
+          n++;
+        }
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+
+  // Kill any workflow that isn't going to be our deploy.yml
+  const wfDir = path.join(ROOT, ".github", "workflows");
+  if (exists(wfDir)) {
+    try {
+      for (const name of fs.readdirSync(wfDir)) {
+        if (name === "deploy.yml") continue;
+        try {
+          fs.unlinkSync(path.join(wfDir, name));
+          info("removed workflow " + name);
+          n++;
+        } catch {}
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // Remove gh-pages branch folder if it was deployed locally (rare)
+  const ghPagesDir = path.join(ROOT, "node_modules", ".cache", "gh-pages");
+  if (exists(ghPagesDir)) {
+    try {
+      fs.rmSync(ghPagesDir, { recursive: true, force: true });
+      n++;
+    } catch {}
+  }
+
+  ok("Removed " + n + " item(s)");
+}
+
+// =============================================================================
+// 2. PATCH vite.config.js → use VITE_BASE env (default '/')
+// =============================================================================
+function patchViteConfig() {
+  step("Patching vite.config.js (base from VITE_BASE env)");
   const p = path.join(ROOT, "vite.config.js");
   if (!exists(p)) {
     warn("vite.config.js not found — skipping");
     return false;
   }
-  let src = read(p);
+  let src = readF(p);
 
-  const baseLine = "  base: '/" + repoName + "/',";
+  // Remove any existing `base:` line
+  src = src.replace(/^\s*base\s*:\s*[^\n]+,?\s*\n/gm, "");
 
-  // If a base already exists, replace it
-  if (/^\s*base\s*:\s*['"`].*?['"`]\s*,?\s*$/m.test(src)) {
-    src = src.replace(/^\s*base\s*:\s*['"`].*?['"`]\s*,?\s*$/m, baseLine);
+  // Insert base right after `defineConfig({` (or `return {`)
+  const baseExpr = "base: process.env.VITE_BASE || '/',";
+  if (/defineConfig\s*\(\s*\{/.test(src)) {
+    src = src.replace(/(defineConfig\s*\(\s*\{)/, "$1\n    " + baseExpr);
+  } else if (/return\s*\{/.test(src)) {
+    src = src.replace(/(return\s*\{)/, "$1\n    " + baseExpr);
   } else {
-    // Insert base right after `export default defineConfig({`
-    src = src.replace(
-      /(export\s+default\s+defineConfig\s*\(\s*\{)/,
-      "$1\n" + baseLine
-    );
-    // Or if there's a `=> ({` pattern
-    if (!/base\s*:/.test(src)) {
-      src = src.replace(/return\s*\{\s*\n/, "return {\n" + baseLine + "\n");
-    }
-  }
-
-  if (!/base\s*:/.test(src)) {
-    warn(
-      "Could not auto-insert base — please add manually: base: '/" +
-        repoName +
-        "/'"
-    );
+    warn("Could not find defineConfig({ — add manually: " + baseExpr);
     return false;
   }
 
-  write(p, src);
-  ok("base = '/" + repoName + "/'");
+  writeF(p, src);
+  ok("base = process.env.VITE_BASE || '/'");
   return true;
 }
 
-// ---------- 2. Patch package.json (scripts + devDep) ----------
+// =============================================================================
+// 3. PATCH package.json — remove deploy:* + gh-pages + predeploy/deploy
+// =============================================================================
 function patchPackageJson() {
-  step("Patching package.json");
+  step("Cleaning package.json");
   const p = path.join(ROOT, "package.json");
   if (!exists(p)) {
-    warn("package.json not found — aborting");
+    warn("package.json not found");
     return false;
   }
   let pkg;
   try {
-    pkg = JSON.parse(read(p));
+    pkg = JSON.parse(readF(p));
   } catch (e) {
-    warn("package.json invalid: " + e.message);
+    warn("invalid package.json: " + e.message);
     return false;
   }
 
-  pkg.scripts = pkg.scripts || {};
-  pkg.scripts.predeploy = pkg.scripts.predeploy || "npm run build";
-  pkg.scripts.deploy = pkg.scripts.deploy || "gh-pages -d dist --dotfiles";
-  pkg.devDependencies = pkg.devDependencies || {};
-  if (!pkg.devDependencies["gh-pages"]) {
-    pkg.devDependencies["gh-pages"] = "^6.1.1";
+  // Remove deploy-related scripts
+  if (pkg.scripts) {
+    const kill = [];
+    for (const k of Object.keys(pkg.scripts)) {
+      if (/^deploy/i.test(k) || k === "predeploy" || k === "zip") kill.push(k);
+    }
+    for (const k of kill) delete pkg.scripts[k];
   }
 
-  write(p, JSON.stringify(pkg, null, 2) + "\n");
-  ok("added predeploy + deploy scripts + gh-pages devDep");
+  // Remove gh-pages devDep
+  if (pkg.devDependencies && pkg.devDependencies["gh-pages"]) {
+    delete pkg.devDependencies["gh-pages"];
+  }
+
+  writeF(p, JSON.stringify(pkg, null, 2) + "\n");
+  ok("removed deploy:* scripts + gh-pages");
   return true;
 }
 
-// ---------- 3. Install gh-pages ----------
-function installGhPages() {
-  step("Installing gh-pages");
-  const bin =
-    os.platform() === "win32"
-      ? path.join(ROOT, "node_modules", ".bin", "gh-pages.cmd")
-      : path.join(ROOT, "node_modules", ".bin", "gh-pages");
-  if (exists(bin)) {
-    ok("gh-pages already installed");
-    return true;
-  }
+// =============================================================================
+// 4. CREATE .github/workflows/deploy.yml
+// =============================================================================
+const DEPLOY_YML = `name: Deploy to GitHub Pages
 
-  const r = run("npm", [
-    "install",
-    "--save-dev",
-    "gh-pages",
-    "--no-audit",
-    "--no-fund",
-  ]);
-  if (r.code !== 0) {
-    warn("npm install gh-pages failed");
-    return false;
-  }
-  ok("gh-pages installed");
-  return true;
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Lint (soft)
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Build
+        env:
+          NODE_ENV: production
+          VITE_BASE: /\${{ github.event.repository.name }}/
+        run: npm run build
+
+      - name: Verify build output
+        run: |
+          test -f dist/index.html || (echo "dist/index.html missing" && exit 1)
+          echo "✓ Build verified"
+
+      - name: Add .nojekyll (bypass Jekyll)
+        run: touch dist/.nojekyll
+
+      - name: Add 404 fallback for SPA
+        run: cp dist/index.html dist/404.html
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: \${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+`;
+
+function createWorkflow() {
+  step("Creating .github/workflows/deploy.yml");
+  writeF(path.join(ROOT, ".github", "workflows", "deploy.yml"), DEPLOY_YML);
+  ok(".github/workflows/deploy.yml created");
 }
 
-// ---------- 4. Create public/404.html ----------
-function create404() {
-  step("Creating public/404.html (SPA fallback)");
+// =============================================================================
+// 5. CREATE public/.nojekyll + public/404.html
+// =============================================================================
+function createPublicAssets() {
+  step("Creating public/.nojekyll + public/404.html");
   const publicDir = path.join(ROOT, "public");
-  if (!exists(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
-  const target = path.join(publicDir, "404.html");
-  const indexHtml = path.join(ROOT, "index.html");
-  if (exists(target)) {
-    ok("public/404.html already exists");
-    return true;
-  }
-  if (!exists(indexHtml)) {
-    // Create a minimal version
-    write(
-      target,
-      [
-        "<!doctype html>",
-        '<html lang="ar" dir="rtl"><head>',
-        '<meta charset="UTF-8" />',
-        '<meta name="viewport" content="width=device-width,initial-scale=1" />',
-        "<title>EGY-Skills</title>",
-        "<script>sessionStorage.redirect = location.pathname;</script>",
-        '<script>location.replace("/egy-skills/" + (location.hash || "#/"));</script>',
-        "</head><body></body></html>",
-        "",
-      ].join("\n")
+  fs.mkdirSync(publicDir, { recursive: true });
+
+  // .nojekyll — tells GitHub Pages not to run Jekyll (which breaks _-prefixed files)
+  writeF(path.join(publicDir, ".nojekyll"), "");
+
+  // 404.html — SPA fallback. Redirect all unknown paths to root preserving hash.
+  const fallback404 = `<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>EGY-Skills</title>
+    <script>
+      // SPA fallback: preserve the requested path so React Router can read it after redirect.
+      (function () {
+        var path = location.pathname || '/';
+        var parts = path.split('/').filter(Boolean);
+        // First segment is the repo base (e.g. "/egy-skills/")
+        var base = parts.length ? '/' + parts[0] + '/' : '/';
+        var rest = path.slice(base.length) || '';
+        sessionStorage.setItem('egyskills.redirect', '/' + rest.replace(/^\\//, ''));
+        location.replace(base);
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
+`;
+  writeF(path.join(publicDir, "404.html"), fallback404);
+
+  ok("public/.nojekyll + public/404.html created");
+}
+
+// =============================================================================
+// 6. REWRITE DEPLOY.md (GitHub Pages only)
+// =============================================================================
+const DEPLOY_MD = `# Deployment — GitHub Pages
+
+The only supported deployment target is **GitHub Pages**, via the official
+GitHub Actions workflow at \`.github/workflows/deploy.yml\`.
+
+---
+
+## How it works
+
+On every push to \`main\`:
+
+1. The workflow installs dependencies (\`npm ci\`).
+2. It runs \`npm run build\` with \`VITE_BASE\` set to \`/<repo-name>/\`
+   (required because GitHub Pages serves from a subpath).
+3. It copies \`dist/index.html\` to \`dist/404.html\` (SPA deep-link fallback).
+4. It adds \`.nojekyll\` so Jekyll doesn't strip files starting with \`_\`.
+5. It uploads the artifact and publishes it with \`actions/deploy-pages\`.
+
+No \`gh-pages\` branch, no \`gh-pages\` npm package, no external services.
+
+---
+
+## First-time setup
+
+1. Push your code to \`main\`:
+   \`\`\`bash
+   git add .
+   git commit -m "Initial commit"
+   git branch -M main
+   git remote add origin https://github.com/<user>/<repo>.git
+   git push -u origin main
+   \`\`\`
+
+2. On GitHub, open the repo → **Settings** → **Pages**.
+
+3. Under **Build and deployment** → **Source**, choose **GitHub Actions**.
+
+4. Go to the **Actions** tab. The \`Deploy to GitHub Pages\` workflow should
+   already be running. Wait for it to finish (about 1 minute).
+
+5. Your site will be live at:
+   \`\`\`
+   https://<user>.github.io/<repo>/
+   \`\`\`
+
+---
+
+## Updating the site
+
+\`\`\`bash
+git add .
+git commit -m "your change"
+git push
+\`\`\`
+
+The workflow re-runs automatically and re-publishes.
+
+You can also trigger it manually from **Actions → Deploy to GitHub Pages → Run workflow**.
+
+---
+
+## Local preview (matches what gets deployed)
+
+\`\`\`bash
+npm ci
+npm run build
+npm run preview
+# → http://localhost:4173
+\`\`\`
+
+---
+
+## Custom domain (optional)
+
+1. Repo → **Settings** → **Pages** → **Custom domain**.
+2. Enter your domain (e.g. \`egy-skills.com\`).
+3. At your DNS provider, add:
+   - \`A\` records to \`185.199.108.153\`, \`.109.153\`, \`.110.153\`, \`.111.153\`
+   - \`CNAME\` record \`www\` → \`<user>.github.io\`
+4. Add a file \`public/CNAME\` containing your domain (single line).
+5. Commit and push — the workflow will pick it up.
+
+---
+
+## Troubleshooting
+
+| Problem | Cause | Fix |
+| --- | --- | --- |
+| Blank page after deploy | \`VITE_BASE\` wrong | Confirm repo name matches — the workflow reads it automatically |
+| 404 on \`/courses\` | Missing \`404.html\` | \`.github/workflows/deploy.yml\` creates it; check that step ran |
+| \`_next\`/\`_assets\` missing | Jekyll stripped files | Ensure \`public/.nojekyll\` exists (created automatically) |
+| Workflow doesn't start | Pages source not set to Actions | Settings → Pages → Source: **GitHub Actions** |
+| Old deploy still visible | Cache | Hard-refresh (Ctrl+Shift+R) or check the Actions run logs |
+
+---
+
+## What was removed
+
+This project intentionally does **not** support:
+- Vercel
+- Netlify
+- Docker / Nginx
+- Cloudflare Pages
+- Surge
+- Firebase Hosting
+
+All configuration files and scripts for those targets have been deleted.
+`;
+
+function writeDeployMd() {
+  step("Writing DEPLOY.md (GitHub Pages only)");
+  writeF(path.join(ROOT, "DEPLOY.md"), DEPLOY_MD);
+  ok("DEPLOY.md rewritten");
+}
+
+// =============================================================================
+// 7. REWRITE README.md (remove non-GitHub deployment references)
+// =============================================================================
+function writeReadme() {
+  step("Rewriting README.md");
+  const existing = readF(path.join(ROOT, "README.md")) || "";
+  // Preserve the title if it exists, else default
+  const titleMatch = existing.match(/^#\s+.+$/m);
+  const title = titleMatch ? titleMatch[0] : "# EGY-Skills";
+
+  const readme =
+    title +
+    `
+
+A modern, minimal, youth-oriented student platform for learning programming,
+Arduino and robotics. Rebuilt as a clean React 18 + Vite SPA with a strict
+black & green design system, feature-first folder structure, route-level code
+splitting and a small reusable UI kit.
+
+## Tech stack
+
+- React 18 (function components + hooks)
+- Vite 5
+- react-router-dom v6
+- lucide-react (monochrome icons)
+- Plain CSS + CSS variables
+
+## Folder structure
+
+\`\`\`
+src/
+  components/    shared UI kit
+  features/      auth, courses, dashboard, profile, settings
+  hooks/         shared hooks
+  layouts/       MainLayout, AuthLayout, TopBar, Sidebar
+  lib/           apiClient, constants, logger, format
+  router.jsx
+  styles/        globals.css, utilities.css
+  App.jsx
+  main.jsx
+\`\`\`
+
+## Scripts
+
+| Command | Purpose |
+| --- | --- |
+| \`npm run dev\` | Dev server on http://localhost:5173 |
+| \`npm run build\` | Production build → \`dist/\` |
+| \`npm run preview\` | Preview the production build |
+| \`npm run lint\` | ESLint |
+
+## Run locally
+
+\`\`\`bash
+npm ci
+npm run dev
+\`\`\`
+
+## Deploy
+
+This project deploys **only to GitHub Pages**, via GitHub Actions.
+
+See [DEPLOY.md](./DEPLOY.md) for the full guide.
+
+Quick summary:
+1. Push the repository to GitHub (\`main\` branch).
+2. Settings → Pages → Source: **GitHub Actions**.
+3. Every push to \`main\` auto-deploys.
+
+## Git quickstart
+
+\`\`\`bash
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin https://github.com/<user>/<repo>.git
+git push -u origin main
+\`\`\`
+
+## License
+
+MIT — see [LICENSE](./LICENSE).
+`;
+  writeF(path.join(ROOT, "README.md"), readme);
+  ok("README.md rewritten");
+}
+
+// =============================================================================
+// 8. REMOVE LEFTOVER CI/CD REFERENCES FROM .gitignore/.dockerignore
+// =============================================================================
+function cleanGitignore() {
+  step("Sanity check .gitignore");
+  const p = path.join(ROOT, ".gitignore");
+  if (!exists(p)) {
+    writeF(
+      p,
+      "node_modules/\ndist/\n.env\n.env.*\n!.env.example\n.backup-*/\n*.log\n.DS_Store\n"
     );
-  } else {
-    let html = read(indexHtml);
-    // Add a small script that preserves the deep-link path so the SPA can recover it
-    const script =
-      '<script>sessionStorage.redirect=location.pathname;location.replace("/"+location.pathname.split("/")[1]+"/");</script>';
-    if (!/sessionStorage\.redirect/.test(html)) {
-      html = html.replace("</body>", script + "\n</body>");
+    ok(".gitignore created");
+    return;
+  }
+  let src = readF(p);
+  const mustIgnore = ["node_modules/", "dist/", ".env", ".backup-*/"];
+  let added = false;
+  for (const line of mustIgnore) {
+    if (!src.split(/\r?\n/).some((l) => l.trim() === line)) {
+      src += (src.endsWith("\n") ? "" : "\n") + line + "\n";
+      added = true;
     }
-    write(target, html);
   }
-  ok("public/404.html created");
-  return true;
+  if (added) {
+    writeF(p, src);
+    ok(".gitignore topped up");
+  } else ok(".gitignore already ok");
 }
 
-// ---------- 5. git init + remote ----------
-function gitInit(user, repo) {
-  step("Initializing git repository");
-  const hasGit = exists(path.join(ROOT, ".git"));
-  if (!hasGit) {
-    const r = run("git", ["init"]);
-    if (r.code !== 0) {
-      warn("git init failed");
-      return false;
-    }
-    run("git", ["branch", "-M", "main"]);
-    ok("git init + branch main");
-  } else {
-    ok("git already initialized");
-    // Ensure branch is main (silent)
-    run("git", ["checkout", "-B", "main"], { silent: true });
-  }
-
-  // Ensure user.name / user.email exist (locally) so commit works
-  const nameRes = run("git", ["config", "user.name"], { silent: true });
-  if (!nameRes.out.trim()) {
-    run("git", ["config", "user.name", user || "EGY-Skills User"], {
-      silent: true,
-    });
-    ok("set git user.name locally");
-  }
-  const emailRes = run("git", ["config", "user.email"], { silent: true });
-  if (!emailRes.out.trim()) {
-    run(
-      "git",
-      ["config", "user.email", (user || "user") + "@users.noreply.github.com"],
-      { silent: true }
-    );
-    ok("set git user.email locally");
-  }
-
-  // Remote
-  const url = "https://github.com/" + user + "/" + repo + ".git";
-  const getRemote = run("git", ["remote", "get-url", "origin"], {
-    silent: true,
-  });
-  if (getRemote.code === 0 && getRemote.out.trim()) {
-    run("git", ["remote", "set-url", "origin", url], { silent: true });
-    ok("updated origin → " + url);
-  } else {
-    const r = run("git", ["remote", "add", "origin", url]);
-    if (r.code !== 0) {
-      warn("git remote add failed");
-      return false;
-    }
-    ok("origin → " + url);
-  }
-  return true;
-}
-
-// ---------- 6. commit + push ----------
-function gitCommitAndPush() {
-  step("Staging and committing");
-  run("git", ["add", "-A"]);
-
-  // Are there changes?
-  const status = run("git", ["status", "--porcelain"], { silent: true });
-  if (!status.out.trim()) {
-    ok("nothing to commit");
-  } else {
-    const msg =
-      "deploy: " + new Date().toISOString().slice(0, 19).replace("T", " ");
-    const r = run("git", ["commit", "-m", msg]);
-    if (r.code !== 0) warn("git commit failed (maybe user.email/name missing)");
-    else ok("commit created");
-  }
-
-  if (SKIP_PUSH) {
-    warn("--skip-push given → skipping push. Local repo ready.");
-    return true;
-  }
-
-  step("Pushing to GitHub");
-  const r = run("git", ["push", "-u", "origin", "main"]);
-  if (r.code !== 0) {
-    warn("git push failed — you may need to authenticate");
-    console.log(paint(C.gry, "  → Create a Personal Access Token:"));
-    console.log(paint(C.gry, "    https://github.com/settings/tokens"));
-    console.log(paint(C.gry, "  → Use it as the password when prompted."));
-    return false;
-  }
-  ok("pushed to origin/main");
-  return true;
-}
-
-// ---------- 7. npm run deploy ----------
-function runDeploy() {
-  step("Running `npm run deploy`");
-  const r = run("npm", ["run", "deploy"]);
-  if (r.code !== 0) {
-    warn("npm run deploy failed");
-    return false;
-  }
-  ok("Published to gh-pages branch");
-  return true;
-}
-
-// ---------- main ----------
+// =============================================================================
+// MAIN
+// =============================================================================
 async function main() {
   console.log("");
   console.log(
@@ -405,7 +694,7 @@ async function main() {
   console.log(
     paint(
       C.b + C.grn,
-      "║   EGY-Skills · One-shot GitHub Pages deployment      ║"
+      "║   EGY-Skills · GitHub Pages only · cleanup fixer     ║"
     )
   );
   console.log(
@@ -418,73 +707,52 @@ async function main() {
 
   backup();
 
-  // Gather info
-  let user = argOf("user");
-  let repo = argOf("repo");
-
-  // Try to guess from existing origin
-  if (!user || !repo) {
-    const r = run("git", ["remote", "get-url", "origin"], { silent: true });
-    const m =
-      r.out && r.out.match(/github\.com[:\/]([^\/]+)\/([^\.\s]+?)(?:\.git)?$/);
-    if (m) {
-      user = user || m[1];
-      repo = repo || m[2];
-    }
-  }
-
-  if (!user) user = await ask("GitHub username: ");
-  if (!repo) repo = await ask("Repository name  : ");
-  if (!user || !repo) {
-    err("Username and repo name are required.");
-    process.exit(1);
-  }
-
-  console.log("");
-  info("User   : " + paint(C.cyn, user));
-  info("Repo   : " + paint(C.cyn, repo));
-  info("Base   : " + paint(C.cyn, "/" + repo + "/"));
-  info(
-    "URL    : " + paint(C.cyn, "https://" + user + ".github.io/" + repo + "/")
+  // Confirm
+  console.log(paint(C.b, "  This will:"));
+  console.log(
+    "   • Delete Vercel / Netlify / Docker / Cloudflare / Surge / Firebase configs"
   );
+  console.log("   • Delete any deploy-* scripts and old GitHub workflows");
+  console.log("   • Create .github/workflows/deploy.yml (GitHub Pages only)");
+  console.log("   • Patch vite.config.js to use VITE_BASE env");
+  console.log("   • Remove deploy:* scripts + gh-pages from package.json");
+  console.log("   • Rewrite DEPLOY.md and README.md");
+  console.log("   • Create public/.nojekyll and public/404.html");
   console.log("");
-
-  const a = await ask("Proceed? (Y/n): ");
+  const a = await ask("  Proceed? (Y/n): ");
   if (a && !/^y?$/i.test(a)) {
     info("Cancelled.");
     process.exit(0);
   }
 
-  // 1..4 local patches
-  patchViteConfig(repo);
+  killArtifacts();
+  patchViteConfig();
   patchPackageJson();
-  installGhPages();
-  create404();
-
-  // 5..7 git
-  if (!gitInit(user, repo)) {
-    err("git setup failed");
-    process.exit(1);
-  }
-  gitCommitAndPush();
-
-  // 8 deploy
-  runDeploy();
+  createWorkflow();
+  createPublicAssets();
+  writeDeployMd();
+  writeReadme();
+  cleanGitignore();
 
   hr();
-  ok("All done.");
+  ok("Done.");
   console.log("");
-  console.log("  Site will be live at:");
+  console.log(paint(C.b, "  Next steps:"));
   console.log(
-    "  " + paint(C.b + C.cyn, "https://" + user + ".github.io/" + repo + "/")
+    "    1. " +
+      paint(C.cyn, 'git add . && git commit -m "github-pages only" && git push')
+  );
+  console.log(
+    "    2. GitHub → Settings → Pages → Source: " +
+      paint(C.cyn, "GitHub Actions")
+  );
+  console.log(
+    "    3. Watch the run at: " +
+      paint(C.cyn, "https://github.com/<user>/<repo>/actions")
   );
   console.log("");
-  console.log(paint(C.gry, "  First time only: enable GitHub Pages"));
   console.log(
-    paint(
-      C.gry,
-      "  Repo → Settings → Pages → Source: branch `gh-pages` /root → Save"
-    )
+    paint(C.gry, "  Site will be live at: https://<user>.github.io/<repo>/")
   );
   console.log("");
 }
